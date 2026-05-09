@@ -55,7 +55,6 @@ if errorlevel 1 (
         pause
         exit /b 1
     )
-    REM Refresh PATH after install
     for /f "delims=" %%i in ('npm config get prefix 2^>nul') do set "NPM_PREFIX=%%i"
     set "PATH=!PATH!;!NPM_PREFIX!"
 )
@@ -67,8 +66,8 @@ REM  Step 3: Fix Windows compatibility
 REM ======================================================
 echo  [3/6] Fixing Windows compatibility...
 
-REM 3a - Remove Linux-only preinstall from root package.json
-powershell -NoProfile -Command "$f='!APP!\package.json'; $j=Get-Content $f -Raw|ConvertFrom-Json; $j.scripts.PSObject.Properties.Remove('preinstall'); $j|ConvertTo-Json -Depth 20|Set-Content $f -Encoding UTF8"
+REM 3a - Remove Linux-only preinstall AND approve build scripts for pnpm 10/11
+powershell -NoProfile -Command "$f='!APP!\package.json'; $j=Get-Content $f -Raw|ConvertFrom-Json; $j.scripts.PSObject.Properties.Remove('preinstall'); $builds=@('better-sqlite3','esbuild','msw','unrs-resolver','@swc/core'); $pnpmCfg=[PSCustomObject]@{onlyBuiltDependencies=$builds}; if(-not($j.PSObject.Properties['pnpm'])){$j|Add-Member -NotePropertyName 'pnpm' -NotePropertyValue $pnpmCfg}else{$j.pnpm=($j.pnpm|Add-Member -NotePropertyName 'onlyBuiltDependencies' -NotePropertyValue $builds -Force -PassThru)}; $j|ConvertTo-Json -Depth 20|Set-Content $f -Encoding UTF8"
 echo         root package.json fixed.
 
 REM 3b - Fix api-server dev script (export command does not work on Windows)
@@ -89,10 +88,16 @@ echo.
 call pnpm install
 if errorlevel 1 (
     echo.
-    echo  ERROR: Dependency installation failed.
-    echo  Check your internet connection and try again.
-    pause
-    exit /b 1
+    echo  Install had issues. Approving build scripts and retrying...
+    echo.
+    call pnpm approve-builds --all >nul 2>&1
+    call pnpm install
+    if errorlevel 1 (
+        echo.
+        echo  ERROR: Dependency installation failed. See the error above.
+        pause
+        exit /b 1
+    )
 )
 echo.
 echo         All dependencies installed.
@@ -120,7 +125,6 @@ REM ======================================================
 echo.
 echo  [6/6] Creating desktop shortcut...
 
-REM Write the launcher script (start-accountsoft.bat)
 set "LAUNCHER=!APP!\start-accountsoft.bat"
 (
     echo @echo off
@@ -128,22 +132,14 @@ set "LAUNCHER=!APP!\start-accountsoft.bat"
     echo cd /d "!APP!"
     echo echo Starting AccountSoft, please wait...
     echo.
-    echo REM Start the API server minimized in the background
     echo start "AccountSoft API" /min cmd /k "cd /d !APP!\artifacts\api-server ^&^& set NODE_ENV=development ^&^& node --enable-source-maps ./dist/index.mjs"
-    echo.
-    echo REM Wait for the API server to be ready
     echo timeout /t 5 /nobreak ^>nul
-    echo.
-    echo REM Start the frontend
     echo start "AccountSoft UI" /min cmd /k "cd /d !APP! ^&^& pnpm --filter @workspace/account-soft run dev"
-    echo.
-    echo REM Wait then open browser automatically
     echo timeout /t 8 /nobreak ^>nul
     echo start http://localhost:25833
     echo exit
 ) > "!LAUNCHER!"
 
-REM Create the Windows desktop shortcut
 powershell -NoProfile -Command "$ws=New-Object -ComObject WScript.Shell; $sc=$ws.CreateShortcut([Environment]::GetFolderPath('Desktop')+'\AccountSoft.lnk'); $sc.TargetPath='!LAUNCHER!'; $sc.WorkingDirectory='!APP!'; $sc.Description='Launch AccountSoft Accounting App'; $sc.WindowStyle=7; $sc.Save()"
 echo         Desktop shortcut created.
 
