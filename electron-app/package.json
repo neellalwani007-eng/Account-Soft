@@ -1,0 +1,53 @@
+{
+  "name": "accountsoft-desktop",
+  "version": "1.0.0",
+  "description": "AccountSoft - Offline Accounting for Indian Businesses",
+  "main": "src/main.cjs",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win --x64"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.9.0"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.0",
+    "electron": "^35.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.accountsoft.desktop",
+    "productName": "AccountSoft",
+    "copyright": "Copyright 2025 AccountSoft",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*"
+    ],
+    "extraResources": [
+      { "from": "assets", "to": "assets" },
+      { "from": "frontend", "to": "frontend" },
+      { "from": "data",    "to": "data"     }
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "node_modules/better-sqlite3/**/*",
+      "**/*.node"
+    ],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "assets/accountsoft.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": false,
+      "installerIcon": "assets/accountsoft.ico",
+      "uninstallerIcon": "assets/accountsoft.ico",
+      "createDesktopShortcut": true,
+      "shortcutName": "AccountSoft",
+      "installerHeaderIcon": "assets/accountsoft.ico"
+    }
+  }
+}

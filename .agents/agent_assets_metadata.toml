@@ -17,3 +17,9 @@ id = "DyORa9o_-gvD7H7S5UY_6"
 uri = "file://windows-setup/accountsoft.ico"
 type = "unspecified"
 title = "AccountSoft Icon (ICO for Windows shortcut)"
+
+[[outputs]]
+id = "hN2ZLVgu4f17qslHiD2mS"
+uri = "file://AccountSoft-Electron-Builder.zip"
+type = "unspecified"
+title = "AccountSoft-Electron-Builder.zip — download and follow steps below"
