@@ -15,6 +15,12 @@ set "APP=%~dp0"
 if "!APP:~-1!"=="\" set "APP=!APP:~0,-1!"
 cd /d "!APP!"
 
+REM ---- Make sure npm global bin folder is in PATH ----
+for /f "delims=" %%i in ('npm config get prefix 2^>nul') do set "NPM_PREFIX=%%i"
+if defined NPM_PREFIX (
+    set "PATH=!PATH!;!NPM_PREFIX!"
+)
+
 REM ======================================================
 REM  Step 1: Check Node.js
 REM ======================================================
@@ -32,24 +38,28 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
-for /f %%i in ('node --version 2^>nul') do set "NODE_VER=%%i"
+for /f "delims=" %%i in ('node --version 2^>nul') do set "NODE_VER=%%i"
 echo         Node.js !NODE_VER! found.
 
 REM ======================================================
 REM  Step 2: Check / Install pnpm
 REM ======================================================
 echo  [2/6] Checking pnpm...
-pnpm --version >nul 2>&1
+where pnpm >nul 2>&1
 if errorlevel 1 (
     echo         pnpm not found. Installing...
-    call npm install -g pnpm >nul 2>&1
+    call npm install -g pnpm
     if errorlevel 1 (
+        echo.
         echo  ERROR: Could not install pnpm. Check your internet and try again.
         pause
         exit /b 1
     )
+    REM Refresh PATH after install
+    for /f "delims=" %%i in ('npm config get prefix 2^>nul') do set "NPM_PREFIX=%%i"
+    set "PATH=!PATH!;!NPM_PREFIX!"
 )
-for /f %%i in ('pnpm --version 2^>nul') do set "PNPM_VER=%%i"
+for /f "delims=" %%i in ('pnpm --version 2^>nul') do set "PNPM_VER=%%i"
 echo         pnpm !PNPM_VER! found.
 
 REM ======================================================
@@ -61,11 +71,11 @@ REM 3a - Remove Linux-only preinstall from root package.json
 powershell -NoProfile -Command "$f='!APP!\package.json'; $j=Get-Content $f -Raw|ConvertFrom-Json; $j.scripts.PSObject.Properties.Remove('preinstall'); $j|ConvertTo-Json -Depth 20|Set-Content $f -Encoding UTF8"
 echo         root package.json fixed.
 
-REM 3b - Fix api-server dev script (export does not work on Windows)
+REM 3b - Fix api-server dev script (export command does not work on Windows)
 powershell -NoProfile -Command "$f='!APP!\artifacts\api-server\package.json'; $j=Get-Content $f -Raw|ConvertFrom-Json; $j.scripts.dev='pnpm run build && pnpm run start'; $j|ConvertTo-Json -Depth 20|Set-Content $f -Encoding UTF8"
 echo         api-server package.json fixed.
 
-REM 3c - Re-enable Windows esbuild binary (it was excluded for Linux-only server)
+REM 3c - Re-enable Windows esbuild binary (was excluded for Linux-only server)
 powershell -NoProfile -Command "$f='!APP!\pnpm-workspace.yaml'; $lines=(Get-Content $f)|Where-Object{$_ -notmatch 'esbuild.*win32'}; Set-Content $f $lines -Encoding UTF8"
 echo         pnpm-workspace.yaml fixed.
 
@@ -127,7 +137,7 @@ set "LAUNCHER=!APP!\start-accountsoft.bat"
     echo REM Start the frontend
     echo start "AccountSoft UI" /min cmd /k "cd /d !APP! ^&^& pnpm --filter @workspace/account-soft run dev"
     echo.
-    echo REM Wait then open browser
+    echo REM Wait then open browser automatically
     echo timeout /t 8 /nobreak ^>nul
     echo start http://localhost:25833
     echo exit
