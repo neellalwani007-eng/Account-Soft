@@ -137,8 +137,14 @@ set "LAUNCHER=!APP!\start-accountsoft.bat"
     echo exit
 ) > "!LAUNCHER!"
 
-REM Create Windows desktop shortcut
-powershell -NoProfile -Command "$ws=New-Object -ComObject WScript.Shell; $sc=$ws.CreateShortcut([Environment]::GetFolderPath('Desktop')+'\AccountSoft.lnk'); $sc.TargetPath='!LAUNCHER!'; $sc.WorkingDirectory='!APP!'; $sc.Description='Launch AccountSoft Accounting App'; $sc.WindowStyle=7; $sc.Save()"
+REM Copy the logo to a permanent location inside the app folder
+set "ICON=!APP!\accountsoft.ico"
+if not exist "!ICON!" (
+    if exist "!APP!\windows-setup\accountsoft.ico" copy "!APP!\windows-setup\accountsoft.ico" "!ICON!" >nul
+)
+
+REM Create Windows desktop shortcut (with logo if available)
+powershell -NoProfile -Command "$ws=New-Object -ComObject WScript.Shell; $sc=$ws.CreateShortcut([Environment]::GetFolderPath('Desktop')+'\AccountSoft.lnk'); $sc.TargetPath='!LAUNCHER!'; $sc.WorkingDirectory='!APP!'; $sc.Description='Launch AccountSoft Accounting App'; $sc.WindowStyle=7; $ico='!ICON!'; if(Test-Path $ico){$sc.IconLocation=$ico}; $sc.Save()"
 echo         Desktop shortcut created.
 
 REM ======================================================

@@ -1,0 +1,19 @@
+uploads = []
+
+[[generated]]
+id = "HgqAyHkggLDt1BulJa8Xy"
+uri = "file://windows-setup/accountsoft-logo.png"
+type = "image"
+title = "generated_image"
+
+[[outputs]]
+id = "Z771K33SpPSl4ewc8WrRU"
+uri = "file://windows-setup/accountsoft-logo.png"
+type = "image"
+title = "AccountSoft Logo"
+
+[[outputs]]
+id = "DyORa9o_-gvD7H7S5UY_6"
+uri = "file://windows-setup/accountsoft.ico"
+type = "unspecified"
+title = "AccountSoft Icon (ICO for Windows shortcut)"
