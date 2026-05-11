@@ -70,11 +70,16 @@ jobs:
           $env:REPL_ID   = ""
           pnpm --filter "@workspace/account-soft" run build
 
-      # ── 7. Bundle Express server for Electron (CJS) ───────────────────────
+      # ── 7. Install Electron deps (includes esbuild needed for bundle step) ──
+      - name: Install Electron dependencies
+        working-directory: electron-app
+        run: npm install
+
+      # ── 8. Bundle Express server for Electron (CJS) ───────────────────────
       - name: Bundle server for Electron
         run: node electron-app/build-server-bundle.mjs
 
-      # ── 8. Copy files into electron-app ───────────────────────────────────
+      # ── 9. Copy files into electron-app ───────────────────────────────────
       - name: Prepare Electron app resources
         shell: pwsh
         run: |
@@ -99,11 +104,6 @@ jobs:
             Copy-Item 'artifacts/data/accountsoft.db' 'electron-app/data/accountsoft.db'
             Write-Host "Database copied"
           }
-
-      # ── 9. Install Electron deps ──────────────────────────────────────────
-      - name: Install Electron dependencies
-        working-directory: electron-app
-        run: npm install
 
       # ── 10. Rebuild better-sqlite3 for Electron ───────────────────────────
       - name: Rebuild native SQLite module for Electron
