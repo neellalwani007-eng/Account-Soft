@@ -47,3 +47,4 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+electron-app/src/server-bundle.cjs
