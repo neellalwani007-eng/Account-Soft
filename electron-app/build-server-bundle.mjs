@@ -20,8 +20,11 @@ await build({
   external    : ['better-sqlite3', 'electron', '*.node'],
   outfile     : path.join(__dirname, 'src', 'server-bundle.cjs'),
   tsconfig    : path.join(root, 'artifacts', 'api-server', 'tsconfig.json'),
-  // esbuild replaces import.meta.url with a CJS-compatible equivalent
-  // when format=cjs, so no manual define needed.
+  // Tell esbuild where to find npm packages from the workspace
+  nodePaths   : [
+    path.join(root, 'node_modules'),
+    path.join(root, 'artifacts', 'api-server', 'node_modules'),
+  ],
 })
 
-console.log('✓  server-bundle.cjs written to electron-app/src/')
+console.log('server-bundle.cjs written to electron-app/src/')
