@@ -1,0 +1,124 @@
+name: Build AccountSoft Windows Installer
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:   # also lets you trigger it manually from GitHub.com
+
+jobs:
+  build:
+    runs-on: windows-latest   # real Windows Server 2022 machine in the cloud
+
+    steps:
+      # ── 1. Check out your code ────────────────────────────────────────────
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ── 2. Node.js ────────────────────────────────────────────────────────
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      # ── 3. pnpm ───────────────────────────────────────────────────────────
+      - name: Install pnpm
+        run: npm install -g pnpm@10
+
+      # ── 4. Fix Windows compatibility ──────────────────────────────────────
+      - name: Fix Windows compatibility
+        shell: pwsh
+        run: |
+          # Remove Linux-only preinstall script from root package.json
+          $pkg = Get-Content 'package.json' -Raw | ConvertFrom-Json
+          $pkg.scripts.PSObject.Properties.Remove('preinstall')
+          $builds = @('better-sqlite3','esbuild','msw','unrs-resolver','@swc/core')
+          $pnpmCfg = [PSCustomObject]@{ onlyBuiltDependencies = $builds }
+          if (-not ($pkg.PSObject.Properties['pnpm'])) {
+            $pkg | Add-Member -NotePropertyName 'pnpm' -NotePropertyValue $pnpmCfg
+          } else {
+            $pkg.pnpm = ($pkg.pnpm | Add-Member -NotePropertyName 'onlyBuiltDependencies' `
+                         -NotePropertyValue $builds -Force -PassThru)
+          }
+          $pkg | ConvertTo-Json -Depth 20 | Set-Content 'package.json' -Encoding UTF8
+          Write-Host "root package.json fixed"
+
+          # Remove ALL win32 exclusions so rollup, esbuild, etc. install correctly
+          $lines = (Get-Content 'pnpm-workspace.yaml') | Where-Object { $_ -notmatch 'win32' }
+          Set-Content 'pnpm-workspace.yaml' $lines -Encoding UTF8
+          Write-Host "pnpm-workspace.yaml fixed"
+
+          # Fix api-server dev script (export syntax is Linux-only)
+          $api = Get-Content 'artifacts/api-server/package.json' -Raw | ConvertFrom-Json
+          $api.scripts.dev = 'pnpm run build && pnpm run start'
+          $api | ConvertTo-Json -Depth 20 | Set-Content 'artifacts/api-server/package.json' -Encoding UTF8
+          Write-Host "api-server package.json fixed"
+
+      # ── 5. Install workspace dependencies ─────────────────────────────────
+      - name: Install workspace dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      # ── 6. Build React frontend ───────────────────────────────────────────
+      - name: Build React frontend
+        shell: pwsh
+        run: |
+          $env:PORT      = "3000"
+          $env:BASE_PATH = "/"
+          $env:NODE_ENV  = "production"
+          $env:REPL_ID   = ""
+          pnpm --filter "@workspace/account-soft" run build
+
+      # ── 7. Bundle Express server for Electron (CJS) ───────────────────────
+      - name: Bundle server for Electron
+        run: node electron-app/build-server-bundle.mjs
+
+      # ── 8. Copy files into electron-app ───────────────────────────────────
+      - name: Prepare Electron app resources
+        shell: pwsh
+        run: |
+          # Built React app → electron-app/frontend/
+          if (Test-Path 'electron-app/frontend') {
+            Remove-Item -Recurse -Force 'electron-app/frontend'
+          }
+          Copy-Item -Recurse 'artifacts/account-soft/dist/public' 'electron-app/frontend'
+          Write-Host "Frontend copied"
+
+          # Icon
+          New-Item -ItemType Directory -Force 'electron-app/assets' | Out-Null
+          $ico = if (Test-Path 'windows-setup/accountsoft.ico') { 'windows-setup/accountsoft.ico' }
+                 elseif (Test-Path 'accountsoft.ico')           { 'accountsoft.ico' }
+                 else { $null }
+          if ($ico) { Copy-Item $ico 'electron-app/assets/accountsoft.ico' }
+          Write-Host "Icon copied"
+
+          # Seed database (if present)
+          New-Item -ItemType Directory -Force 'electron-app/data' | Out-Null
+          if (Test-Path 'artifacts/data/accountsoft.db') {
+            Copy-Item 'artifacts/data/accountsoft.db' 'electron-app/data/accountsoft.db'
+            Write-Host "Database copied"
+          }
+
+      # ── 9. Install Electron deps ──────────────────────────────────────────
+      - name: Install Electron dependencies
+        working-directory: electron-app
+        run: npm install
+
+      # ── 10. Rebuild better-sqlite3 for Electron ───────────────────────────
+      - name: Rebuild native SQLite module for Electron
+        working-directory: electron-app
+        run: npx --yes @electron/rebuild -m better-sqlite3
+
+      # ── 11. Build Windows installer ───────────────────────────────────────
+      - name: Build Windows installer (.exe)
+        working-directory: electron-app
+        run: npx --yes electron-builder --win --x64
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── 12. Upload the finished installer ─────────────────────────────────
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: AccountSoft-Windows-Installer
+          path: electron-app/dist/*.exe
+          retention-days: 30
+          if-no-files-found: error

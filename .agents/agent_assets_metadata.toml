@@ -23,3 +23,9 @@ id = "hN2ZLVgu4f17qslHiD2mS"
 uri = "file://AccountSoft-Electron-Builder.zip"
 type = "unspecified"
 title = "AccountSoft-Electron-Builder.zip — download and follow steps below"
+
+[[outputs]]
+id = "woYlIORmF7H_JR4c1tI3k"
+uri = "file://AccountSoft-GitHub-Build.zip"
+type = "unspecified"
+title = "AccountSoft-GitHub-Build.zip — download this"
