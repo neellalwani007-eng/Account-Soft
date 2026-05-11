@@ -5,6 +5,9 @@ on:
     branches: [main, master]
   workflow_dispatch:   # also lets you trigger it manually from GitHub.com
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     runs-on: windows-latest   # real Windows Server 2022 machine in the cloud
