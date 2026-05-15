@@ -69,7 +69,10 @@ jobs:
           $env:NODE_ENV  = "production"
           $env:REPL_ID   = ""
           pnpm --filter "@workspace/account-soft" run build
-
+- name: Debug build output
+  shell: pwsh
+  run: Get-ChildItem -Recurse 'artifacts/account-soft/dist' | Select-Object FullName
+  
       # ── 7. Install Electron deps (includes esbuild needed for bundle step) ──
       - name: Install Electron dependencies
         working-directory: electron-app
