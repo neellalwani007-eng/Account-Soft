@@ -3,14 +3,14 @@ name: Build AccountSoft Windows Installer
 on:
   push:
     branches: [main, master]
-  workflow_dispatch:   # also lets you trigger it manually from GitHub.com
+  workflow_dispatch:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
-    runs-on: windows-latest   # real Windows Server 2022 machine in the cloud
+    runs-on: windows-latest
 
     steps:
       # ── 1. Check out your code ────────────────────────────────────────────
@@ -45,8 +45,15 @@ jobs:
           $pkg | ConvertTo-Json -Depth 20 | Set-Content 'package.json' -Encoding UTF8
           Write-Host "root package.json fixed"
 
-          # Remove ALL win32 exclusions so rollup, esbuild, etc. install correctly
-          $lines = (Get-Content 'pnpm-workspace.yaml') | Where-Object { $_ -notmatch 'win32' }
+          # Remove ALL platform-specific exclusions (Linux/macOS/Windows overrides)
+          # These are Replit-only and break Windows CI
+          $lines = (Get-Content 'pnpm-workspace.yaml') | Where-Object {
+            $_ -notmatch '@esbuild/' -and
+            $_ -notmatch '@rollup/rollup' -and
+            $_ -notmatch 'lightningcss>' -and
+            $_ -notmatch '@tailwindcss/oxide>' -and
+            $_ -notmatch '@expo/ngrok-bin>'
+          }
           Set-Content 'pnpm-workspace.yaml' $lines -Encoding UTF8
           Write-Host "pnpm-workspace.yaml fixed"
 
@@ -68,17 +75,23 @@ jobs:
           $env:BASE_PATH = "/"
           $env:NODE_ENV  = "production"
           $env:REPL_ID   = ""
-          pnpm --filter "@workspace/account-soft" run build
-# ── 6b. Debug build output ────────────────────────────────────────────
-      - name: Debug build output
-        shell: pwsh
-        run: Get-ChildItem -Recurse 'artifacts/account-soft/dist' | Select-Object FullName
-      # ── 7. Install Electron deps (includes esbuild needed for bundle step) ──
+          Write-Host "=== Package name ==="
+          Get-Content 'artifacts/mockup-sandbox/package.json' | Select-String '"name"'
+          Write-Host "=== Building ==="
+          pnpm --filter "mockup-sandbox" run build
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "React build failed!"
+            exit 1
+          }
+          Write-Host "=== Build output ==="
+          Get-ChildItem -Recurse 'artifacts/mockup-sandbox/dist' | Select-Object FullName
+
+      # ── 7. Install Electron deps ───────────────────────────────────────────
       - name: Install Electron dependencies
         working-directory: electron-app
         run: npm install
 
-      # ── 8. Bundle Express server for Electron (CJS) ───────────────────────
+      # ── 8. Bundle Express server for Electron ─────────────────────────────
       - name: Bundle server for Electron
         run: node electron-app/build-server-bundle.mjs
 
@@ -90,8 +103,17 @@ jobs:
           if (Test-Path 'electron-app/frontend') {
             Remove-Item -Recurse -Force 'electron-app/frontend'
           }
-          Copy-Item -Recurse 'artifacts/account-soft/dist/public' 'electron-app/frontend'
-          Write-Host "Frontend copied"
+          # Try dist/public first, fall back to dist
+          $distPath = if (Test-Path 'artifacts/mockup-sandbox/dist/public') {
+            'artifacts/mockup-sandbox/dist/public'
+          } elseif (Test-Path 'artifacts/mockup-sandbox/dist') {
+            'artifacts/mockup-sandbox/dist'
+          } else {
+            Write-Error "No build output found in artifacts/mockup-sandbox/dist!"
+            exit 1
+          }
+          Copy-Item -Recurse $distPath 'electron-app/frontend'
+          Write-Host "Frontend copied from $distPath"
 
           # Icon
           New-Item -ItemType Directory -Force 'electron-app/assets' | Out-Null
