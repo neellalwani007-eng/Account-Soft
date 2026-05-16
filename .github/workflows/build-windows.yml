@@ -45,8 +45,7 @@ jobs:
           $pkg | ConvertTo-Json -Depth 20 | Set-Content 'package.json' -Encoding UTF8
           Write-Host "root package.json fixed"
 
-          # Remove ALL platform-specific exclusions (Linux/macOS/Windows overrides)
-          # These are Replit-only and break Windows CI
+          # Remove ALL Replit-only platform exclusions that break Windows CI
           $lines = (Get-Content 'pnpm-workspace.yaml') | Where-Object {
             $_ -notmatch '@esbuild/' -and
             $_ -notmatch '@rollup/rollup' -and
@@ -86,12 +85,12 @@ jobs:
           Write-Host "=== Build output ==="
           Get-ChildItem -Recurse 'artifacts/mockup-sandbox/dist' | Select-Object FullName
 
-      # ── 7. Install Electron deps ───────────────────────────────────────────
+      # ── 7. Install Electron dependencies ──────────────────────────────────
       - name: Install Electron dependencies
         working-directory: electron-app
-        run: npm install
+        run: npm install --ignore-scripts
 
-      # ── 8. Bundle Express server for Electron ─────────────────────────────
+      # ── 8. Bundle Express server for Electron (CJS) ───────────────────────
       - name: Bundle server for Electron
         run: node electron-app/build-server-bundle.mjs
 
@@ -103,6 +102,7 @@ jobs:
           if (Test-Path 'electron-app/frontend') {
             Remove-Item -Recurse -Force 'electron-app/frontend'
           }
+
           # Try dist/public first, fall back to dist
           $distPath = if (Test-Path 'artifacts/mockup-sandbox/dist/public') {
             'artifacts/mockup-sandbox/dist/public'
@@ -133,7 +133,20 @@ jobs:
       # ── 10. Rebuild better-sqlite3 for Electron ───────────────────────────
       - name: Rebuild native SQLite module for Electron
         working-directory: electron-app
-        run: npx --yes @electron/rebuild -m better-sqlite3
+        shell: pwsh
+        run: |
+          # Confirm better-sqlite3 is installed
+          if (-not (Test-Path 'node_modules/better-sqlite3/package.json')) {
+            Write-Host "better-sqlite3 not found, installing..."
+            npm install better-sqlite3 --ignore-scripts
+          }
+          Write-Host "better-sqlite3 found, rebuilding for Electron..."
+          npx @electron/rebuild -m better-sqlite3 -v 35.0.0
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Rebuild failed!"
+            exit 1
+          }
+          Write-Host "Rebuild successful!"
 
       # ── 11. Build Windows installer ───────────────────────────────────────
       - name: Build Windows installer (.exe)
