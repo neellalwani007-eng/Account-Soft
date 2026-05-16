@@ -75,7 +75,7 @@ jobs:
           $env:NODE_ENV  = "production"
           $env:REPL_ID   = ""
           Write-Host "=== Package name ==="
-          Get-Content 'artifacts/@workspace/account-soft/package.json' | Select-String '"name"'
+          Get-Content 'artifacts/account-soft/package.json' | Select-String '"name"'
           Write-Host "=== Building ==="
           pnpm --filter "@workspace/account-soft" run build
           if ($LASTEXITCODE -ne 0) {
@@ -83,7 +83,7 @@ jobs:
             exit 1
           }
           Write-Host "=== Build output ==="
-          Get-ChildItem -Recurse 'artifacts/@workspace/account-soft/dist' | Select-Object FullName
+          Get-ChildItem -Recurse 'artifacts/account-soft/dist' | Select-Object FullName
 
      # ── 7. Install Electron dependencies ──────────────────────────────────
       - name: Install Electron dependencies
