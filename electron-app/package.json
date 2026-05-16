@@ -25,12 +25,13 @@
       "output": "dist"
     },
     "files": [
-      "src/**/*"
+      "src/**/*",
+      "server-bundle.cjs"
     ],
     "extraResources": [
       { "from": "assets", "to": "assets" },
       { "from": "frontend", "to": "frontend" },
-      { "from": "data",    "to": "data"     }
+      { "from": "data", "to": "data" }
     ],
     "asar": true,
     "asarUnpack": [
