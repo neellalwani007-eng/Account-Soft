@@ -6,8 +6,7 @@ import {
   useUpdateSettings,
   useListLedgers,
   useCreateLedger,
-  useDeleteLedger,
-  useUpdateLedger
+  useDeleteLedger
 } from "@workspace/api-client-react";
 import type { Firm, AppSettings, ListLedgersParams } from "@workspace/api-client-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -72,8 +71,6 @@ export default function SettingsPage() {
   );
   const createLedgerMutation = useCreateLedger();
   const deleteLedgerMutation = useDeleteLedger();
-  const updateLedgerMutation = useUpdateLedger();
-
   // ── Backup queries ──────────────────────────────────────────────────────────
   const { data: backups = [], refetch: refetchBackups } = useQuery<BackupEntry[]>({
     queryKey: ["backups"],
@@ -159,16 +156,18 @@ export default function SettingsPage() {
   const handleUpdateLedger = async () => {
     if (!activeFirm || !editingLedger) return;
     try {
-      await updateLedgerMutation.mutateAsync({
-        id: editingLedger.id,
-        data: {
+      const res = await fetch(`/api/ledgers/${editingLedger.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           firmId: activeFirm.id,
           name: editLedgerName,
           groupName: editLedgerGroup,
           openingBalance: parseFloat(editLedgerOpBal) || 0,
           openingBalanceSide: editLedgerOpBalSide,
-        } as any
+        }),
       });
+      if (!res.ok) throw new Error("Failed to update ledger");
       setEditingLedger(null);
       refetchLedgers();
       toast({ title: "Ledger Updated" });
