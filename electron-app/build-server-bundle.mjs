@@ -24,17 +24,6 @@ await build({
     path.join(root, 'node_modules'),
     path.join(root, 'artifacts', 'api-server', 'node_modules'),
   ],
-  banner: {
-    js: `
-const __importMetaUrl = (f => typeof f === "string" ? f : f.href)(typeof __filename !== "undefined" ? require("url").pathToFileURL(__filename) : import.meta.url);
-if (typeof globalThis.__importMetaUrlPolyfill === "undefined") {
-  globalThis.__importMetaUrlPolyfill = __importMetaUrl;
-}
-`.trim()
-  },
-  define: {
-    'import.meta.url': '__importMetaUrlPolyfill',
-  },
 })
 
 console.log('server-bundle.cjs written to electron-app/src/')
