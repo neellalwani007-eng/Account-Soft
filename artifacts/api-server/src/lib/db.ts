@@ -1,11 +1,9 @@
 import Database from "better-sqlite3";
 import path from "path";
-import { fileURLToPath } from "url";
 import fs from "fs";
 import { runMigrations } from "./migrate.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_DIR = process.env.DB_PATH || path.join(__dirname, "..", "..", "data");
+const DB_DIR = process.env.DB_PATH || path.join(process.cwd(), "data");
 const DB_FILE = path.join(DB_DIR, "accountsoft.db");
 
 if (!fs.existsSync(DB_DIR)) {

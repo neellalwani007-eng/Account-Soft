@@ -1,10 +1,8 @@
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
 import { logger } from "./logger.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_DIR = process.env.DB_PATH || path.join(__dirname, "..", "..", "data");
+const DB_DIR = process.env.DB_PATH || path.join(process.cwd(), "data");
 const DB_FILE = path.join(DB_DIR, "accountsoft.db");
 const BACKUP_DIR = path.join(DB_DIR, "backups");
 const MAX_BACKUPS = 30;
