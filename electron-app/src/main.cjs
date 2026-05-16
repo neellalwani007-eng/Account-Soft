@@ -47,6 +47,8 @@ function createWindow (port) {
     minWidth:  960,
     minHeight: 600,
     title: 'AccountSoft',
+    show: false,
+    backgroundColor: '#0f172a',
     icon: path.join(resourcesPath, 'assets', 'accountsoft.ico'),
     webPreferences: {
       preload:          path.join(__dirname, 'preload.cjs'),
@@ -56,7 +58,45 @@ function createWindow (port) {
   })
 
   mainWindow.setMenuBarVisibility(false)
-  mainWindow.loadURL(`http://127.0.0.1:${port}`)
+
+  mainWindow.loadURL('data:text/html,' + encodeURIComponent(`
+    <html>
+      <head>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body {
+            background: #0f172a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif;
+            color: #94a3b8;
+          }
+          .logo { font-size: 28px; font-weight: 800; color: #38bdf8; margin-bottom: 12px; }
+          .sub { font-size: 13px; color: #475569; margin-bottom: 40px; }
+          .spinner {
+            width: 36px; height: 36px;
+            border: 3px solid #1e293b;
+            border-top-color: #38bdf8;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+          }
+          .status { margin-top: 16px; font-size: 12px; color: #334155; }
+          @keyframes spin { to { transform: rotate(360deg); } }
+        </style>
+      </head>
+      <body>
+        <div class="logo">AccountSoft</div>
+        <div class="sub">Offline Accounting for Indian Businesses</div>
+        <div class="spinner"></div>
+        <div class="status">Starting up...</div>
+      </body>
+    </html>
+  `))
+
+  mainWindow.once('ready-to-show', () => mainWindow.show())
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url)
@@ -71,20 +111,24 @@ app.whenReady().then(async () => {
 
     if (!fs.existsSync(dbPath)) fs.mkdirSync(dbPath, { recursive: true })
 
-    const dbFile     = path.join(dbPath, 'accountsoft.db')
-    const bundledDb  = path.join(resourcesPath, 'data', 'accountsoft.db')
+    const dbFile    = path.join(dbPath, 'accountsoft.db')
+    const bundledDb = path.join(resourcesPath, 'data', 'accountsoft.db')
     if (!fs.existsSync(dbFile) && fs.existsSync(bundledDb)) {
       fs.copyFileSync(bundledDb, dbFile)
     }
 
-    process.env.PORT      = String(port)
-    process.env.NODE_ENV  = 'production'
-    process.env.DB_PATH   = dbPath
+    process.env.PORT     = String(port)
+    process.env.NODE_ENV = 'production'
+    process.env.DB_PATH  = dbPath
 
-    const frontendDir  = path.join(resourcesPath, 'frontend')
+    const frontendDir = path.join(resourcesPath, 'frontend')
     process.env.STATIC_DIR = frontendDir
 
-    const serverMod  = require('./server-bundle.cjs')
+    // Show window immediately with loading screen
+    createWindow(port)
+
+    // Start server in background
+    const serverMod   = require('./server-bundle.cjs')
     const startServer = serverMod.startServer || serverMod.default || serverMod
 
     if (typeof startServer === 'function') {
@@ -93,16 +137,16 @@ app.whenReady().then(async () => {
       await waitForServer(port)
     }
 
-    createWindow(port)
+    // Server ready — load the real app
+    mainWindow.loadURL(`http://127.0.0.1:${port}`)
+
   } catch (err) {
-    dialog.showErrorBox('AccountSoft – Startup Error', String(err))
+    dialog.showErrorBox('AccountSoft - Startup Error', String(err))
     app.quit()
   }
 })
 
 app.on('window-all-closed', () => app.quit())
 app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0 && mainWindow) {
-    mainWindow.show()
-  }
+  if (BrowserWindow.getAllWindows().length === 0 && mainWindow) mainWindow.show()
 })
