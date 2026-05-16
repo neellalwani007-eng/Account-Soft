@@ -114,12 +114,12 @@ jobs:
           }
 
           # Try dist/public first, fall back to dist
-          $distPath = if (Test-Path 'artifacts/@workspace/account-soft/dist/public') {
-            'artifacts/@workspace/account-soft/dist/public'
-          } elseif (Test-Path 'artifacts/@workspace/account-soft/dist') {
-            'artifacts/@workspace/account-soft/dist'
+          $distPath = if (Test-Path 'artifacts/account-soft/dist/public') {
+            'artifacts/account-soft/dist/public'
+          } elseif (Test-Path 'artifacts/account-soft/dist') {
+            'artifacts/account-soft/dist'
           } else {
-            Write-Error "No build output found in artifacts/@workspace/account-soft/dist!"
+            Write-Error "No build output found in artifacts/account-soft/dist!"
             exit 1
           }
           Copy-Item -Recurse $distPath 'electron-app/frontend'
