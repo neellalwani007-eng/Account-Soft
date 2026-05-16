@@ -2,6 +2,11 @@
   "name": "accountsoft-desktop",
   "version": "1.0.0",
   "description": "AccountSoft - Offline Accounting for Indian Businesses",
+  "author": "AccountSoft",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/neellalwani007-eng/Account-Soft"
+  },
   "main": "src/main.cjs",
   "private": true,
   "scripts": {
@@ -12,7 +17,6 @@
     "better-sqlite3": "^12.9.0"
   },
   "devDependencies": {
-    "@electron/rebuild": "^4.0.0",
     "esbuild": "^0.25.0",
     "electron": "^35.0.0",
     "electron-builder": "^25.0.0"
@@ -21,6 +25,7 @@
     "appId": "com.accountsoft.desktop",
     "productName": "AccountSoft",
     "copyright": "Copyright 2025 AccountSoft",
+    "publish": null,
     "directories": {
       "output": "dist"
     },
