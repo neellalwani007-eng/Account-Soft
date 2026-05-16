@@ -85,10 +85,20 @@ jobs:
           Write-Host "=== Build output ==="
           Get-ChildItem -Recurse 'artifacts/mockup-sandbox/dist' | Select-Object FullName
 
-      # ── 7. Install Electron dependencies ──────────────────────────────────
+     # ── 7. Install Electron dependencies ──────────────────────────────────
       - name: Install Electron dependencies
         working-directory: electron-app
-        run: npm install --ignore-scripts
+        shell: pwsh
+        run: |
+          npm install
+          Write-Host "=== Checking better-sqlite3 installed ==="
+          if (Test-Path 'node_modules/better-sqlite3/package.json') {
+            Write-Host "better-sqlite3 is installed OK"
+          } else {
+            Write-Error "better-sqlite3 missing from node_modules!"
+            exit 1
+          }
+
 
       # ── 8. Bundle Express server for Electron (CJS) ───────────────────────
       - name: Bundle server for Electron
@@ -135,13 +145,8 @@ jobs:
         working-directory: electron-app
         shell: pwsh
         run: |
-          # Confirm better-sqlite3 is installed
-          if (-not (Test-Path 'node_modules/better-sqlite3/package.json')) {
-            Write-Host "better-sqlite3 not found, installing..."
-            npm install better-sqlite3 --ignore-scripts
-          }
-          Write-Host "better-sqlite3 found, rebuilding for Electron..."
-          npx @electron/rebuild -m better-sqlite3 -v 35.0.0
+          Write-Host "Rebuilding better-sqlite3 for Electron 35..."
+          npx @electron/rebuild -m better-sqlite3 -v 35.0.0 --module-dir node_modules/better-sqlite3
           if ($LASTEXITCODE -ne 0) {
             Write-Error "Rebuild failed!"
             exit 1
