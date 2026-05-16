@@ -20,7 +20,6 @@ await build({
   external    : ['better-sqlite3', 'electron', '*.node'],
   outfile     : path.join(__dirname, 'src', 'server-bundle.cjs'),
   tsconfig    : path.join(root, 'artifacts', 'api-server', 'tsconfig.json'),
-  // Tell esbuild where to find npm packages from the workspace
   nodePaths   : [
     path.join(root, 'node_modules'),
     path.join(root, 'artifacts', 'api-server', 'node_modules'),
