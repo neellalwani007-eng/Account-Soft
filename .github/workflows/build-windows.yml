@@ -140,27 +140,14 @@ jobs:
             Write-Host "Database copied"
           }
 
-      # ── 10. Rebuild better-sqlite3 for Electron ───────────────────────────
-      - name: Rebuild native SQLite module for Electron
-        working-directory: electron-app
-        shell: pwsh
-        run: |
-          Write-Host "Rebuilding better-sqlite3 for Electron 35..."
-          npx @electron/rebuild -m better-sqlite3 -v 35.0.0 --module-dir node_modules/better-sqlite3
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "Rebuild failed!"
-            exit 1
-          }
-          Write-Host "Rebuild successful!"
-
-      # ── 11. Build Windows installer ───────────────────────────────────────
+      # ── 10. Build Windows installer ───────────────────────────────────────
       - name: Build Windows installer (.exe)
         working-directory: electron-app
         run: npx --yes electron-builder --win --x64
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # ── 12. Upload the finished installer ─────────────────────────────────
+      # ── 11. Upload the finished installer ─────────────────────────────────
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
