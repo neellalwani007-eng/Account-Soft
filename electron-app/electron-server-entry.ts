@@ -8,7 +8,6 @@
  * Exports `startServer(port, staticDir)` so the Electron main process
  * can start it inline (same Node.js process, no child process needed).
  */
-
 import app from "../artifacts/api-server/src/app";
 import express from "express";
 import path from "path";
@@ -18,11 +17,10 @@ export function startServer(port: number, staticDir: string): Promise<void> {
   return new Promise((resolve, reject) => {
     if (staticDir && fs.existsSync(staticDir)) {
       app.use(express.static(staticDir));
-      app.get("*", (_req, res) => {
+      app.get("/{*path}", (_req, res) => {
         res.sendFile(path.join(staticDir, "index.html"));
       });
     }
-
     app.listen(port, "127.0.0.1", (err?: Error) => {
       if (err) return reject(err);
       resolve();
