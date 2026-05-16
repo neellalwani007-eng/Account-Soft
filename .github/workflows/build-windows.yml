@@ -75,15 +75,15 @@ jobs:
           $env:NODE_ENV  = "production"
           $env:REPL_ID   = ""
           Write-Host "=== Package name ==="
-          Get-Content 'artifacts/mockup-sandbox/package.json' | Select-String '"name"'
+          Get-Content 'artifacts/account-soft/package.json' | Select-String '"name"'
           Write-Host "=== Building ==="
-          pnpm --filter "mockup-sandbox" run build
+          pnpm --filter "account-soft" run build
           if ($LASTEXITCODE -ne 0) {
             Write-Error "React build failed!"
             exit 1
           }
           Write-Host "=== Build output ==="
-          Get-ChildItem -Recurse 'artifacts/mockup-sandbox/dist' | Select-Object FullName
+          Get-ChildItem -Recurse 'artifacts/account-soft/dist' | Select-Object FullName
 
      # ── 7. Install Electron dependencies ──────────────────────────────────
       - name: Install Electron dependencies
@@ -114,12 +114,12 @@ jobs:
           }
 
           # Try dist/public first, fall back to dist
-          $distPath = if (Test-Path 'artifacts/mockup-sandbox/dist/public') {
-            'artifacts/mockup-sandbox/dist/public'
-          } elseif (Test-Path 'artifacts/mockup-sandbox/dist') {
-            'artifacts/mockup-sandbox/dist'
+          $distPath = if (Test-Path 'artifacts/account-soft/dist/public') {
+            'artifacts/account-soft/dist/public'
+          } elseif (Test-Path 'artifacts/account-soft/dist') {
+            'artifacts/account-soft/dist'
           } else {
-            Write-Error "No build output found in artifacts/mockup-sandbox/dist!"
+            Write-Error "No build output found in artifacts/account-soft/dist!"
             exit 1
           }
           Copy-Item -Recurse $distPath 'electron-app/frontend'
