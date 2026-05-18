@@ -19,8 +19,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Building2, Settings as SettingsIcon, Users, Trash2, Plus, Edit2, Shield, Database, RefreshCw, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-
 interface BackupEntry {
   file: string;
   size: number;
