@@ -12,6 +12,7 @@ export function runMigrations(db: InstanceType<typeof Database>) {
     `ALTER TABLE sale_vouchers ADD COLUMN party_address TEXT`,
     `ALTER TABLE sale_vouchers ADD COLUMN party_phone TEXT`,
     `ALTER TABLE sale_vouchers ADD COLUMN paid_amount REAL DEFAULT 0`,
+    `ALTER TABLE ledger_list ADD COLUMN opening_balance REAL DEFAULT 0`,
   ];
 
   for (const sql of migrations) {
